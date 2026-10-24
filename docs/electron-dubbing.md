@@ -41,6 +41,8 @@ Generate. Persisted provider error pages are discarded and restored to the sourc
 dialogue with a retryable error state.
 
 Long projects virtualize transcript rows, so only the visible editors are mounted.
+
+The Dubbing pane has a Projects tab beside its controls that lists saved dub projects, newest first. Selecting a project and confirming opens it in place (it waits while a dub is running); the Projects workspace remains the place to save, rename and delete.
 Timeline waveform peaks and onsets are computed once by the backend and cached as a
 small JSON payload; Chromium never decodes the full separated-vocals WAV to draw the
 timeline. Video previews are written atomically with MP4 fast-start metadata and are
@@ -100,7 +102,14 @@ Malformed, overlapping, or duration-clamped cue counts remain visible in the sid
 Failed imports preserve the current edits. Generated track buttons clear on successful
 replacement to avoid presenting older audio as the new subtitles' output.
 URL import runs only after clicking Ingest; it uses the backend's existing yt-dlp
-pipeline. Explicit cookies.txt selection is available under URL sign-in options; optional caption downloads are available.
+pipeline. URL imports (here and in the voice gallery) accept only `http://` and
+`https://` links and refuse addresses on this computer or the local network,
+including redirects to them. Live streams and upcoming premieres can't be
+imported until the recording is available. Voice-gallery clips download the
+audio track and cut the clip on this computer. To import from a media server on your own network,
+set `OMNIVOICE_ALLOW_PRIVATE_URL_IMPORTS=1` for the backend (for example in
+`~/.config/omnivoice/env`) and restart. Uploads accept common audio and video
+file types only; a playlist or manifest renamed as a video is refused. Explicit cookies.txt selection is available under URL sign-in options; optional caption downloads are available.
 
 Translation quality uses the existing backend Fast, Autofit and Cinematic modes.
 The choice persists in the working draft and saved project (`translateQuality`),
@@ -179,7 +188,15 @@ including zero guidance. Engine-specific audible effects remain unverified.
 Saved Smart Fit override values now survive project import and draft recovery and
 reach generation only when Smart Fit is selected. Other timing strategies omit
 those parameters. Unit tests cover round-trip preservation and request routing;
-there is no new tuning panel (Tauri exposes these as stored preferences).
+the speed limits now have a panel (below).
+
+**Smart Fit speed limits (#2896).** With Smart Fit selected, the Timing section
+shows two sliders: *Fastest speed* (`audio_rate_cap`, 1.0 to 2.0, default 1.5) and
+*Slowest speed* (`min_audio_rate`, 0.5 to 1.0, default 0.85; 1.0 stops short lines
+being slowed to fill their slot). Both are sent as `fit_options`, validated by the
+API (out-of-range values return 422), saved with drafts and projects, and leave
+the defaults untouched until moved. Changing one re-mixes rendered lines without
+re-synthesizing them.
 
 Real export verification: `tests/test_smart_fit_export.py` passes all 43 tests
 with the installed app-managed FFmpeg/ffprobe explicitly supplied. Its seven
@@ -387,3 +404,7 @@ audio if a later import fails validation or runs out of space.
 
 Cancelling an upload waits for its copy worker to stop before closing the input
 and clearing the reserved job, so the same upload can be retried safely.
+
+Use **Use link** beside an uploaded source to replace it with a URL. **Cancel**
+closes the URL form without changing the source; changing the source also closes
+the form. URL ingestion waits until any pending cancellation finishes.
